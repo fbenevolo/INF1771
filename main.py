@@ -1,9 +1,8 @@
-#from queue import PriorityQueue
+from queue import PriorityQueue
+from TreeNode import TreeNode
 
-import colorama
 import time
-
-colorama.init()
+import heapq
 
 print("\033[2J")   #apaga tela
 print("\033[?25l") #apaga cursor
@@ -14,27 +13,24 @@ x = 0
 
 
 def read_file(filename):
-
     global x, y
-    lines = None    
-    start = (0,0)
-    end = (0,0)
-
     with open(filename) as file:
-        lines = file.readlines()
+        lines = [line.strip('\n') for line in file.readlines()]
 
-        j = 0
-        for line in lines:
-            lines[j] = line.strip('\n')
-            
-            if line.find('F') > -1:
-                end = (line.find('F'), j)
-            if line.find('I') > -1:
-                start = (line.find('I'), j)
-            j += 1
-
-    x = len(lines[0])
     y = len(lines)
+    x = len(lines[0]) if y > 0 else 0
+    start = None
+    end = None
+
+    for j in range(y):
+        for i in range(x):
+            if lines[j][i] in ('I', 'i'):
+                start = (i, j)
+            if lines[j][i] in ('F', 'f'):
+                end = (i, j)
+
+    if not start or not end:
+        raise ValueError("Start ('I'/'i') or end ('F'/'f') not found in map")
 
     return lines, start, end
 
@@ -44,8 +40,8 @@ def printMap(lines, actual):
     print()
     print()
     print()
-            
-    #print("\033[%d;%dH" % (0, 0)) # y, x
+
+    print("\033[%d;%dH" % (0, 0)) # y, x
 
     for j in range(y):
         for i in range(x):
@@ -59,7 +55,6 @@ def printMap(lines, actual):
 
 
 def get_value(c):
-    
     v = -1
 
     if c == '.' or c == 'I' or c == 'F':
@@ -76,131 +71,76 @@ def get_value_from_map(mapa, coord):
     return get_value(get_char_from_map(mapa, coord))
 
 
-def add_valid_pos(nb, mapa, coord):        
+def add_valid_pos(nb, mapa, coord):
     if get_value_from_map(mapa, coord) > -1:
         nb.append(coord)
 
 def get_neighborhood(mapa, coord):
-    
+
     nb = []
     if coord[0] == 0:
         add_valid_pos(nb, mapa, (coord[0] + 1, coord[1]))
-    
+
     elif coord[0] == x - 1:
         add_valid_pos(nb, mapa, (coord[0] - 1, coord[1]))
-    
-    else:    
+
+    else:
         add_valid_pos(nb, mapa, (coord[0] + 1, coord[1]))
         add_valid_pos(nb, mapa, (coord[0] - 1, coord[1]))
-    
+
 
     if coord[1] == 0:
         add_valid_pos(nb, mapa, (coord[0], coord[1] + 1))
-    
+
     elif coord[1] == y - 1:
         add_valid_pos(nb, mapa, (coord[0], coord[1] - 1))
-    
-    else:    
+
+    else:
         add_valid_pos(nb, mapa, (coord[0], coord[1] + 1))
         add_valid_pos(nb, mapa, (coord[0], coord[1] - 1))
-    
+
     return nb
 
-mapa, start, end = read_file('C:\\Users\\c2111415\\Documents\\IA\\mapa10.txt')
-
-def busca_largura(mapa):
-	
-    global start
-
-    num_iter = 0
-    fronteira = []
-    fronteira.append(start)
-    visitados = []
-
-    while fronteira:
-        
-        num_iter += 1
-        posicao_atual = fronteira.pop(0)
-        visitados.append(posicao_atual)
-
-        printMap(mapa, posicao_atual)
-        time.sleep(0.1)
-
-        if posicao_atual == end:
-            print(" > Encontrei a solucao em", num_iter)
-            return 
-    
-        for vizinho in get_neighborhood(mapa, posicao_atual):
-
-            if vizinho not in visitados:
-                fronteira.append(vizinho)
-    
-
-def busca_profundidade(mapa):
-    
-    global start
-
-    num_iter = 0
-    fronteira = []
-    fronteira.append(start)
-    visitados = []
-
-    while fronteira:
-        
-        num_iter += 1
-        
-
-        posicao_atual = fronteira.pop(0)
-        visitados.append(posicao_atual)
-  
-
-        printMap(mapa, posicao_atual)
-        time.sleep(0.1)
-
-        if posicao_atual == end:
-            print(" > Encontrei a solucao em", num_iter)
-            return 
-    
-        for vizinho in get_neighborhood(mapa, posicao_atual):
-
-            if vizinho not in visitados:
-                fronteira.append(vizinho)
-	
+mapa, start, end = read_file('draft/mapa30.txt')
 
 def manhattan_distance(_from, to):
     # |x2 - x1| + |y2 - y1|
     return abs(to[0] - _from[0]) + abs(to[1] - _from[1])
 
 def busca_a_estrela(mapa):
-	
-    global start
-
     num_iter = 0
     fronteira = PriorityQueue()
     fronteira.put(TreeNode(start, manhattan_distance(start, end), 0))
-    visitados = []
+    visitados = {}
 
-    while fronteira:
-        
+    while not fronteira.empty():
         num_iter += 1
-        no_arv = fronteira.get()
-        distancia_atual = no_arv.get
-        visitados.append(posicao_atual)
+        curr_node = fronteira.get()
+        curr_coord = curr_node.get_coord() # pega a coordenada atual
+        curr_dist_g = curr_node.get_value_gx() # pega a distancia percorrida até o nó atual
 
-        printMap(mapa, posicao_atual)
-        time.sleep(0.1)
+        printMap(mapa, curr_coord)
+        time.sleep(0.05)
 
-        if posicao_atual == end:
+        if curr_coord == end: # se chegou no final, retorna
             print(" > Encontrei a solucao em", num_iter)
-            return 
-    
-        for vizinho in get_neighborhood(mapa, posicao_atual):
+            return
 
-            if vizinho not in visitados:
-                fronteira.append(vizinho)
+        # se a coordenada atual tiver sido visitada e a distancia percorrida até ele for menor ou igual a percorrida até o atual, prossiga
+        if curr_coord in visitados and visitados[curr_coord] <= curr_dist_g:
+            continue
+
+        visitados[curr_coord] = curr_dist_g # distancia atual vai ser a distancia percorrida até o nó atual
+
+        for coord_vizinho in get_neighborhood(mapa, curr_coord): # para cada vizinho da posição atual
+            novo_dist_g = curr_dist_g + get_value_from_map(mapa, coord_vizinho)
+            if coord_vizinho not in visitados or novo_dist_g < visitados[coord_vizinho]: #
+                novo_h = manhattan_distance(coord_vizinho, end) # nova distancia do nó até o fim é a distancia manhattan do nó até o fim
+                no_vizinho = TreeNode(coord_vizinho, novo_dist_g + novo_h, novo_dist_g) # coloca o vizinho na fronteira com a sua heuristica calculada
+                fronteira.put(no_vizinho)
+
+    print("Nenhuma solução encontrada")
+    return
 
 
-
-busca_largura(mapa)
-#busca_profundidade(mapa)
-#busca_a_estrela(mapa)
+busca_a_estrela(mapa)
