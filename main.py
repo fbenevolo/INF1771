@@ -14,6 +14,33 @@ init()
 y = 0
 x = 0
 
+eventos = {
+    '1': 55,
+    '2': 60,
+    '3': 65,
+    '4': 70,
+    '5': 75,
+    '6': 90,
+    '7': 95,
+    '8': 120,
+    '9': 125,
+    '0': 130,
+    'B': 135,
+    'C': 150,
+    'E': 155,
+    'G': 160,
+    'H': 170,
+    'J': 180
+}
+
+runas = {
+    
+    '1': {'poder': 1.6, 'usos': 5},
+    '2': {'poder': 1.4, 'usos': 5},
+    '3': {'poder': 1.3, 'usos': 5},
+    '4': {'poder': 1.2, 'usos': 5},
+    '5': {'poder': 1.0, 'usos': 5}
+}
 
 def read_file(filename):
     global x, y
@@ -71,7 +98,16 @@ def printMap(lines, actual):
 
         print()
 
+#Não está completo. Só para ter uma base 
+def calculaTempoEvento(dificuldade_evento):
 
+    if runas['1']['usos'] == 0:
+
+        return dificuldade_evento
+
+    tempo_do_evento = dificuldade_evento / runas['1']['poder']    
+
+    return tempo_do_evento
 
 def get_value(c):
     v = -1
@@ -90,7 +126,11 @@ def get_value(c):
         v = 5
     elif c == 'X':
         v = -1
-
+    
+    elif c in eventos:
+        
+        v = calculaTempoEvento(eventos[c]) 
+    
     return v
 
 def get_char_from_map(mapa, coord):
@@ -172,6 +212,7 @@ def busca_a_estrela(mapa):
 
     print("Nenhuma solução encontrada")
     return
+
 
 
 busca_a_estrela(mapa)
