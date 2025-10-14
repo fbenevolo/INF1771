@@ -17,16 +17,16 @@ class TreeNode:
 
     def get_coord(self):
         return self.coord
-    
+
     def get_priority(self):
         return self.priority
-    
+
     def get_value_gx(self):
         return self.value_gx
 
     def set_parent(self, value):
         self.parent = value
-    
+
     def get_parent(self):
         return self.parent
 
