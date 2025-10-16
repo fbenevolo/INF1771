@@ -203,7 +203,7 @@ def get_neighborhood(mapa, coord):
 def manhattan_distance(_from, to):
     return abs(to[0] - _from[0]) + abs(to[1] - _from[1])
 
-# MODIFICADO: A* para gerenciar estado complexo e custo total
+# A* para gerencia estado complexo e custo total
 def busca_a_estrela(mapa):
     cost = 0
     num_iter = 0
@@ -281,7 +281,7 @@ def busca_a_estrela(mapa):
                 )
                 novo_visited_events = curr_visited_events.union({char_vizinho})
             
-            # NOVO: Custo g(x) total (Terreno + Evento)
+            # Custo g(x) total (Terreno + Evento)
             novo_dist_g = curr_dist_g + custo_terreno + tempo_evento
             novo_h = calcula_h_completa(coord_vizinho, end, novo_visited_events) 
             
@@ -294,9 +294,9 @@ def busca_a_estrela(mapa):
             )
             no_vizinho.set_parent(curr_node)
             
-            novo_state_key = no_vizinho.get_state_key() # NOVO: Chave complexa
+            novo_state_key = no_vizinho.get_state_key()
 
-            # NOVO: Checagem de estado visitado complexo
+            # Checagem de estado visitado complexo
             if novo_state_key not in visitados or novo_dist_g < visitados[novo_state_key]:
                 fronteira.put(no_vizinho)
 
