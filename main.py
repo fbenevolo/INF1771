@@ -154,7 +154,7 @@ def get_neighborhood(mapa, coord):
 def manhattan_distance(_from, to):
     return abs(to[0] - _from[0]) + abs(to[1] - _from[1])
 
-def busca_a_estrela(mapa, origem, destino, max_cost=99999999):
+def busca_a_estrela(mapa, origem, destino):
     cost = 0
     num_iter = 0
     fronteira = PriorityQueue()
@@ -175,16 +175,11 @@ def busca_a_estrela(mapa, origem, destino, max_cost=99999999):
         curr_coord = curr_node.get_coord()
         curr_dist_g = curr_node.get_value_gx()
 
-        # use the provided pruning bound (max_cost) if any
-        if max_cost is not None and curr_dist_g > max_cost:
-            return None, None
-
         draw_map(mapa, curr_node, visitados)
 
         if curr_coord == destino:
             cost = curr_dist_g
             print(f" > Encontrei a distância em {num_iter} iteracoes até o fim e custo {cost}")
-            print(f"O melhor custo atualmente é {max_cost}")
             # Reconstruct path for visualization
             path = []
             node = curr_node
@@ -215,33 +210,12 @@ def busca_a_estrela(mapa, origem, destino, max_cost=99999999):
     return None, None
 
 
-def best_path_passing_by_events(mapa, events):
-    M = [[None] * (len(events) + 2) for _ in range(len(events) + 2)]
-    pontos = ['I'] + events + ['Z']
-
-
-    for i in range(len(pontos)):
-        best_cost = 9999999
-        for j in range(i + 1, len(pontos)):
-            coord_i = get_coord_from_map(mapa, pontos[i])
-            coord_j = get_coord_from_map(mapa, pontos[j])
-            cost, path = busca_a_estrela(mapa, coord_i, coord_j, max_cost=best_cost)
-            best_cost = min(best_cost, cost if cost is not None else best_cost)
-            if cost is None:
-                M[i][j] = None
-            else:
-                M[i][j] = cost
-            # (Optional) you might want to set symmetric value if distances are same both ways:
-            # M[j][i] = M[i][j]
-        print(M)
-
-
 
 
 
 mapa, start, end = read_file('mapa_t1_instancia.txt')
-#cost, path = busca_a_estrela(mapa, get_coord_from_map(mapa, '1'), get_coord_from_map(mapa, 'Z'))
-best_path_passing_by_events(mapa, list(eventos.keys()))
+cost, path = busca_a_estrela(mapa, get_coord_from_map(mapa, '1'), get_coord_from_map(mapa, 'Z'))
+
 
 # Keep window open until closed by user
 running = True
