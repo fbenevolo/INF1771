@@ -79,72 +79,61 @@ def draw_map(mapa, current_node=None, visited=None, path=None):
             if path and (i, j) in path:
                 color = COLORS['PATH']
             # MODIFICADO: 'visited' agora é um dicionário complexo, precisa extrair a coordenada
-            elif visited and (i, j) in {k[0] for k in visited.keys()} and (i, j) != start and (i, j) != end: 
+            elif visited and (i, j) in {k[0] for k in visited.keys()} and (i, j) != start and (i, j) != end:
                 color = COLORS['VISITED']
             elif current_node and (i, j) == current_node.get_coord():
                 color = COLORS['CURRENT']
             pygame.draw.rect(screen, color, (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-            # Draw grid lines
-            #pygame.draw.rect(screen, (50, 50, 50), (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
+
     pygame.display.flip()
 
-# REMOVIDA: A função calculaTempoEvento não é mais utilizada, pois o cálculo é feito na A*
-# def calculaTempoEvento(dificuldade_evento):
-#    if runas['1']['usos'] == 0:
-#        return dificuldade_evento
-#    tempo_do_evento = dificuldade_evento / runas['1']['poder']
-#    return tempo_do_evento
 
-# NOVA FUNÇÃO: Otimização Gulosa de Runas
 def otimiza_evento_runas(dificuldade_evento, runas_atuais_tuple):
     global runas_powers
-    
+
     # runas_list: [(1.6, 5, 0), (1.4, 5, 1), ...] -> (poder, usos_restantes, indice_runa_0_4)
     runes_list = []
     for i, usos in enumerate(runas_atuais_tuple):
         # Associa o poder ao índice da runa
-        runes_list.append((runas_powers[i+1], usos, i)) 
+        runes_list.append((runas_powers[i+1], usos, i))
 
     # 1. Ordena por poder, decrescente (Estratégia Gulosa)
     runes_list.sort(key=lambda x: x[0], reverse=True)
-    
+
     total_power = 0.0
     runas_usadas_indices = []
-    
+
     # 2. Usa todas as runas disponíveis (usos_restantes > 0)
     for power, usos, index in runes_list:
         if usos > 0:
             total_power += power
             runas_usadas_indices.append(index)
-            
-    if total_power == 0:
-        # Se 0 runas disponiveis, penalidade alta
-        tempo_gasto = dificuldade_evento * 1000 
-    else:
+
+    if total_power != 0:
         tempo_gasto = dificuldade_evento / total_power
-        
+
     # 3. Cria o NOVO estado de uso das runas (novo estado imutável)
     novo_runes_usage = list(runas_atuais_tuple)
     for index in runas_usadas_indices:
         novo_runes_usage[index] -= 1
-        
+
     return tempo_gasto, tuple(novo_runes_usage)
 
 def heuristica_eventos_restantes(visited_events):
     global eventos, runas_powers
-    
+
     max_total_power = sum(runas_powers.values())
     tempo_min_restante = 0
-    
+
     for char, dificuldade in eventos.items():
         if char not in visited_events:
             # Tempo mínimo teórico para resolver o evento restante
             tempo_min_restante += dificuldade / max_total_power
-            
+
     return tempo_min_restante
 
 def calcula_h_completa(_from, to, visited_events):
-    h_mapa = manhattan_distance(_from, to) * 1 
+    h_mapa = manhattan_distance(_from, to) * 1
     h_eventos = heuristica_eventos_restantes(visited_events)
     return h_mapa + h_eventos
 
@@ -207,10 +196,10 @@ def manhattan_distance(_from, to):
 def busca_a_estrela(mapa):
     cost = 0
     num_iter = 0
-    fronteira = PriorityQueue()    
+    fronteira = PriorityQueue()
     initial_runes_usage = (5, 5, 5, 5, 5)
-    initial_visited_events = frozenset() # Set imutável para hashing
-    initial_h = calcula_h_completa(start, end, initial_visited_events) 
+    initial_visited_events = frozenset() 
+    initial_h = calcula_h_completa(start, end, initial_visited_events)
     start_node = TreeNode(start, initial_h, 0, initial_runes_usage, initial_visited_events)
     fronteira.put(start_node)
 
@@ -229,7 +218,7 @@ def busca_a_estrela(mapa):
         curr_dist_g = curr_node.get_value_gx()
         curr_runes_usage = curr_node.get_runes_usage()
         curr_visited_events = curr_node.get_visited_events()
-        state_key = curr_node.get_state_key() 
+        state_key = curr_node.get_state_key()
 
         # Draw current state (visualization)
         draw_map(mapa, curr_node, visitados)
@@ -243,12 +232,12 @@ def busca_a_estrela(mapa):
             # All 16 events visited
             all_events_visited = len(curr_visited_events) == len(eventos)
             # At least one rune with usage >= 1
-            rune_preserved = any(usage >= 1 for usage in curr_runes_usage) 
-            
+            rune_preserved = any(usage >= 1 for usage in curr_runes_usage)
+
             if all_events_visited and rune_preserved:
                 cost = curr_dist_g
                 print(f" > Encontrei a solucao em {num_iter} iteracoes e custo {cost}")
-                
+
                 # Reconstruct path for visualization
                 path = []
                 node = curr_node
@@ -256,44 +245,44 @@ def busca_a_estrela(mapa):
                     path.append(node.get_coord())
                     node = node.get_parent()
                 path.reverse()
-                
+
                 # Draw final path
                 draw_map(mapa, None, visitados, path)
                 return cost, path
-            
-            continue 
+
+            continue
 
         if curr_coord in visitados and visitados[curr_coord] <= curr_dist_g:
             continue
 
         for coord_vizinho in get_neighborhood(mapa, curr_coord):
             char_vizinho = get_char_from_map(mapa, coord_vizinho)
-            custo_terreno = get_value(char_vizinho) 
+            custo_terreno = get_value(char_vizinho)
 
             novo_runes_usage = curr_runes_usage
             novo_visited_events = curr_visited_events
             tempo_evento = 0
-            
+
             if char_vizinho in eventos and char_vizinho not in curr_visited_events:
                 dificuldade = eventos[char_vizinho]
                 tempo_evento, novo_runes_usage = otimiza_evento_runas(
                     dificuldade, curr_runes_usage
                 )
                 novo_visited_events = curr_visited_events.union({char_vizinho})
-            
+
             # Custo g(x) total (Terreno + Evento)
             novo_dist_g = curr_dist_g + custo_terreno + tempo_evento
-            novo_h = calcula_h_completa(coord_vizinho, end, novo_visited_events) 
-            
+            novo_h = calcula_h_completa(coord_vizinho, end, novo_visited_events)
+
             no_vizinho = TreeNode(
-                coord_vizinho, 
+                coord_vizinho,
                 novo_dist_g + novo_h, # f(x)
                 novo_dist_g,          # g(x)
                 novo_runes_usage,
                 novo_visited_events
             )
             no_vizinho.set_parent(curr_node)
-            
+
             novo_state_key = no_vizinho.get_state_key()
 
             # Checagem de estado visitado complexo
@@ -305,7 +294,7 @@ def busca_a_estrela(mapa):
     return None, None
 
 # Main execution
-init()  # Initialize colorama (though not used in visualization)
+init()  #
 try:
     mapa, start, end = read_file('mapa_t1_instancia.txt')
     cost, path = busca_a_estrela(mapa)
@@ -313,7 +302,6 @@ except FileNotFoundError:
     print("Erro: O arquivo 'mapa_t1_instancia.txt' não foi encontrado.")
 
 
-# Keep window open until closed by user
 running = True
 while running:
     for event in pygame.event.get():

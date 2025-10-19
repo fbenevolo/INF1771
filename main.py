@@ -47,6 +47,9 @@ COLORS = {
     'PATH': (0, 0, 0)       # Black for final path
 }
 
+# curr_cost should be a local bound passed into busca_a_estrela via max_cost;
+# avoid module-level globals for pruning
+
 def read_file(filename):
     global x, y, WINDOW_WIDTH, WINDOW_HEIGHT, screen
     with open(filename) as file:
@@ -72,6 +75,14 @@ def read_file(filename):
 
     return lines, start, end
 
+def get_coord_from_map(mapa, char):
+    for j in range(y):
+        for i in range(x):
+            if mapa[j][i] == char:
+                return (i, j)
+    return None
+
+
 def draw_map(mapa, current_node=None, visited=None, path=None):
     screen.fill((255, 255, 255))
     for j in range(y):
@@ -90,10 +101,7 @@ def draw_map(mapa, current_node=None, visited=None, path=None):
     pygame.display.flip()
 
 def calculaTempoEvento(dificuldade_evento):
-    if runas['1']['usos'] == 0:
-        return dificuldade_evento
-    tempo_do_evento = dificuldade_evento / runas['1']['poder']
-    return tempo_do_evento
+    return dificuldade_evento
 
 def get_value(c):
     v = -1
@@ -146,12 +154,12 @@ def get_neighborhood(mapa, coord):
 def manhattan_distance(_from, to):
     return abs(to[0] - _from[0]) + abs(to[1] - _from[1])
 
-def busca_a_estrela(mapa):
+def busca_a_estrela(mapa, origem, destino, max_cost=99999999):
     cost = 0
     num_iter = 0
     fronteira = PriorityQueue()
     # Use your TreeNode with parent for path tracing
-    start_node = TreeNode(start, manhattan_distance(start, end), 0)
+    start_node = TreeNode(origem, manhattan_distance(origem, destino), 0)
     fronteira.put(start_node)
     visitados = {}
 
@@ -167,12 +175,16 @@ def busca_a_estrela(mapa):
         curr_coord = curr_node.get_coord()
         curr_dist_g = curr_node.get_value_gx()
 
-        # Draw current state (visualization)
+        # use the provided pruning bound (max_cost) if any
+        if max_cost is not None and curr_dist_g > max_cost:
+            return None, None
+
         draw_map(mapa, curr_node, visitados)
 
-        if curr_coord == end:
+        if curr_coord == destino:
             cost = curr_dist_g
-            print(f" > Encontrei a solucao em {num_iter} iteracoes e custo {cost}")
+            print(f" > Encontrei a distância em {num_iter} iteracoes até o fim e custo {cost}")
+            print(f"O melhor custo atualmente é {max_cost}")
             # Reconstruct path for visualization
             path = []
             node = curr_node
@@ -192,20 +204,44 @@ def busca_a_estrela(mapa):
         for coord_vizinho in get_neighborhood(mapa, curr_coord):
             novo_dist_g = curr_dist_g + get_value_from_map(mapa, coord_vizinho)
             if coord_vizinho not in visitados or novo_dist_g < visitados[coord_vizinho]:
-                novo_h = manhattan_distance(coord_vizinho, end)
+                novo_h = manhattan_distance(coord_vizinho, destino)
                 # Create neighbor node with current node as parent
                 no_vizinho = TreeNode(coord_vizinho, novo_dist_g + novo_h, novo_dist_g)
                 no_vizinho.set_parent(curr_node)
                 fronteira.put(no_vizinho)
 
     print("Nenhuma solução encontrada")
-    draw_map(mapa)  # Draw final map state
+    draw_map(mapa)
     return None, None
 
-# Main execution
-init()  # Initialize colorama (though not used in visualization)
+
+def best_path_passing_by_events(mapa, events):
+    M = [[None] * (len(events) + 2) for _ in range(len(events) + 2)]
+    pontos = ['I'] + events + ['Z']
+
+
+    for i in range(len(pontos)):
+        best_cost = 9999999
+        for j in range(i + 1, len(pontos)):
+            coord_i = get_coord_from_map(mapa, pontos[i])
+            coord_j = get_coord_from_map(mapa, pontos[j])
+            cost, path = busca_a_estrela(mapa, coord_i, coord_j, max_cost=best_cost)
+            best_cost = min(best_cost, cost if cost is not None else best_cost)
+            if cost is None:
+                M[i][j] = None
+            else:
+                M[i][j] = cost
+            # (Optional) you might want to set symmetric value if distances are same both ways:
+            # M[j][i] = M[i][j]
+        print(M)
+
+
+
+
+
 mapa, start, end = read_file('mapa_t1_instancia.txt')
-cost, path = busca_a_estrela(mapa)
+#cost, path = busca_a_estrela(mapa, get_coord_from_map(mapa, '1'), get_coord_from_map(mapa, 'Z'))
+best_path_passing_by_events(mapa, list(eventos.keys()))
 
 # Keep window open until closed by user
 running = True
