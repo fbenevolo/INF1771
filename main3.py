@@ -1,5 +1,5 @@
 import pygame
-
+import math
 from queue import PriorityQueue
 from colorama import init, Fore, Style
 from TreeNode import TreeNode
@@ -8,7 +8,7 @@ import math
 import pandas as pd
 from copy import deepcopy
 
-pygame.init()
+#pygame.init()
 
 # Your original global variables and setup
 y = 0
@@ -71,8 +71,8 @@ def read_file(filename):
     # Initialize Pygame window
     WINDOW_WIDTH = x * CELL_SIZE
     WINDOW_HEIGHT = y * CELL_SIZE
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    pygame.display.set_caption("A* Pathfinding Visualization")
+    #screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    #pygame.display.set_caption("A* Pathfinding Visualization")
 
     return lines, start, end
 
@@ -88,10 +88,17 @@ def draw_map(mapa, current_node=None, visited=None, path=None):
                 color = COLORS['VISITED']
             elif current_node and (i, j) == current_node.get_coord():
                 color = COLORS['CURRENT']
-            pygame.draw.rect(screen, color, (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #pygame.draw.rect(screen, color, (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
             # Draw grid lines
-            #pygame.draw.rect(screen, (50, 50, 50), (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
+            pygame.draw.rect(screen, (50, 50, 50), (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
     pygame.display.flip()
+
+def get_coord_from_map(mapa, char):
+    for j in range(y):
+        for i in range(x):
+            if mapa[j][i] == char:
+                return (i, j)
+    return None
 
 def get_value(c):
     v = -1
@@ -144,33 +151,34 @@ def get_neighborhood(mapa, coord):
 def manhattan_distance(_from, to):
     return abs(to[0] - _from[0]) + abs(to[1] - _from[1])
 
-def busca_a_estrela(mapa):
+def busca_a_estrela(mapa, origem, destino):
     cost = 0
     num_iter = 0
     fronteira = PriorityQueue()
     # Use your TreeNode with parent for path tracing
-    start_node = TreeNode(start, manhattan_distance(start, end), 0)
+    start_node = TreeNode(origem, manhattan_distance(origem, destino), 0)
     fronteira.put(start_node)
     visitados = {}
 
     while not fronteira.empty():
         # Handle Pygame events to allow closing the window
+        '''
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return None, None
+        '''
 
         num_iter += 1
         curr_node = fronteira.get()
         curr_coord = curr_node.get_coord()
         curr_dist_g = curr_node.get_value_gx()
 
-        # Draw current state (visualization)
-        draw_map(mapa, curr_node, visitados)
+        #draw_map(mapa, curr_node, visitados)
 
-        if curr_coord == end:
+        if curr_coord == destino:
             cost = curr_dist_g
-            print(f" > Encontrei a solucao em {num_iter} iteracoes e custo {cost}")
+            #print(f" > Encontrei a distância em {num_iter} iteracoes até o fim e custo {cost}")
             # Reconstruct path for visualization
             path = []
             node = curr_node
@@ -179,7 +187,7 @@ def busca_a_estrela(mapa):
                 node = node.get_parent()
             path.reverse()
             # Draw final path
-            draw_map(mapa, None, visitados, path)
+            #draw_map(mapa, None, visitados, path)
             return cost, path
 
         if curr_coord in visitados and visitados[curr_coord] <= curr_dist_g:
@@ -190,14 +198,14 @@ def busca_a_estrela(mapa):
         for coord_vizinho in get_neighborhood(mapa, curr_coord):
             novo_dist_g = curr_dist_g + get_value_from_map(mapa, coord_vizinho)
             if coord_vizinho not in visitados or novo_dist_g < visitados[coord_vizinho]:
-                novo_h = manhattan_distance(coord_vizinho, end)
+                novo_h = manhattan_distance(coord_vizinho, destino)
                 # Create neighbor node with current node as parent
                 no_vizinho = TreeNode(coord_vizinho, novo_dist_g + novo_h, novo_dist_g)
                 no_vizinho.set_parent(curr_node)
                 fronteira.put(no_vizinho)
 
-    print("Nenhuma solução encontrada")
-    draw_map(mapa)  # Draw final map state
+    #print("Nenhuma solução encontrada")
+    #draw_map(mapa)
     return None, None
 
 def simulated_annealing_runes(
@@ -389,6 +397,55 @@ def simulated_annealing_runes(
         'usos_runa': usos,
     }
 
+def criaMatrizRotas(eventos):
+
+    qtd_eventos = len(eventos) #+2 para incluir inicio e fim
+    total_nos = qtd_eventos + 2
+
+    matriz = [[math.inf for _ in range(total_nos)] for _ in range(total_nos)]
+
+    eventos_chaves = list(eventos.keys())
+    nomes = ['I'] + eventos_chaves + ['Z']
+    
+    
+
+    #Ligacao entre eventos
+    for i, origem in enumerate(eventos_chaves):
+        for j, destino in enumerate(eventos_chaves):
+
+            if i == j:
+
+                matriz[i + 1][j + 1] = math.inf
+            
+            else:
+
+                custo, _ = busca_a_estrela(mapa, get_coord_from_map(mapa, origem), get_coord_from_map(mapa, destino))
+                if custo is not None:
+                        
+                    matriz[i + 1][j + 1] = custo
+                    matriz[j + 1][i + 1] = custo
+
+    #Ligacoes do inicio (I) para todos os eventos
+    for j, destino in enumerate(eventos_chaves):
+
+        custo, _ = busca_a_estrela(mapa, get_coord_from_map(mapa, 'I'), get_coord_from_map(mapa, destino))
+        if custo is not None:
+
+            matriz[0][j + 1] = custo
+            matriz[j + 1][0] = custo
+
+    #Ligacoes de todos os eventos para o fim (Z)
+    for i, origem in enumerate(eventos_chaves):
+
+        custo, _ = busca_a_estrela(mapa, get_coord_from_map(mapa, origem), get_coord_from_map(mapa, 'Z'))
+        if custo is not None:
+            matriz[i + 1][-1] = custo
+            matriz[-1][i + 1] = custo
+
+
+    matriz = pd.DataFrame(matriz, index=nomes, columns=nomes)
+
+    return matriz
 
 res = simulated_annealing_runes(
     eventos,
@@ -404,15 +461,21 @@ res = simulated_annealing_runes(
 # Main execution
 init()  # Initialize colorama (though not used in visualization)
 mapa, start, end = read_file('mapa_t1_instancia.txt')
-cost, path = busca_a_estrela(mapa)
+#cost, path = busca_a_estrela(mapa, get_coord_from_map(mapa, '1'), get_char_from_map(mapa, 'Z'))
+grafo = criaMatrizRotas(eventos)
 
+print(grafo)
+
+#print(grafo)
+
+'''
 print("\n Melhor custo total:", res['melhor_custo'])
 print(" Usos de cada runa:", res['usos_runa'])
 print(" Melhor combinação encontrada:\n")
 for i, ev in enumerate(res['melhor_solucao'], 1):
     print(f"  Evento {i}: {ev}")
-
-
+'''
+'''
 # Keep window open until closed by user
 running = True
 while running:
@@ -420,4 +483,4 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 pygame.quit()
-
+'''
