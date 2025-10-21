@@ -219,7 +219,7 @@ cost, path = busca_a_estrela(mapa, get_coord_from_map(mapa, '1'), get_coord_from
 
 # Keep window open until closed by user
 running = True
-while running:
+while running:  
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
