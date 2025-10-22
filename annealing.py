@@ -27,9 +27,10 @@ num_uso_runas = [5] * len(runas_powers)
 
 def calc_custo(solucao, dificuldades, runas):
     total = 0
+    eventos = list(dificuldades.values())
     for i, usadas in enumerate(solucao):
         tot_poder = sum(runas[r] for r in usadas)
-        total += dificuldades[i] / tot_poder
+        total += eventos[i] / tot_poder
     return total
 
 
@@ -37,8 +38,17 @@ def valida_solucao(solucao):
     usos = {r: 0 for r in runas_powers.keys()}
     for usadas in solucao:
         for runa in usadas:
-            usos[r] += 1
-    return all(usos[r] <= 5 for r in runas_powers if r != 5 and usos[5] <= 4)
+            usos[runa] += 1
+
+    valida = True
+    for uso in usos.values():
+        if uso > 5:
+            valida = False
+            break
+    if usos[5] > 4:
+        valida = False
+    return valida
+
 
 
 def gera_vizinho(solucao, runas):
@@ -51,22 +61,22 @@ def gera_vizinho(solucao, runas):
         runas_pos = [r for r in list(runas.keys()) if r not in nova_sol[cidade]]
         if runas_pos:
             nova_sol[cidade].append(random.choice(runas_pos))
-    elif ato == "remove":
-        nova_sol[cidade].remove(random.choice(nova_sol[cidade]))
+    elif ato == "remover":
+        if len(nova_sol[cidade]) > 1:
+            nova_sol[cidade].remove(random.choice(nova_sol[cidade]))
     elif ato == "trocar":
         if nova_sol[cidade]:
             removida = random.choice(nova_sol[cidade])
-            nova = random.choice([r for r in list(runas.keys()) if r != removida])
-            nova[cidade].remove(removida)
-            if nova in nova_sol[cidade]:
-                nova_sol[cidade].append(nova)
+            adicionada = random.choice([r for r in list(runas.keys()) if r != removida])
+            nova_sol[cidade].remove(removida)
+            if adicionada not in nova_sol[cidade]:
+                nova_sol[cidade].append(adicionada)
 
     return nova_sol
 
 
-def sim_annealing(eventos, runas, Tini=100, Tmin=1e-3, alpha=0.95, iter=1000):
+def sim_annealing(eventos, runas, Tini=100, Tmin=1e-3, alpha=0.97, iter=1000):
     solucao = [[random.choice(list(runas.keys()))] for _ in eventos]
-    print(solucao)
     custo = calc_custo(solucao, eventos, runas)
 
     melhor_sol = solucao
@@ -77,26 +87,34 @@ def sim_annealing(eventos, runas, Tini=100, Tmin=1e-3, alpha=0.95, iter=1000):
     while t > Tmin:
         for _ in range(iter):
             vizinho = gera_vizinho(solucao, runas)
-            if not valida_solucao(solucao):
-                continue
+            if valida_solucao(vizinho):
+                custo_vizinho = calc_custo(vizinho, eventos, runas)
+                deltaE = custo_vizinho - custo
 
-            custo_vizinho = calc_custo(vizinho, eventos, runas)
-            deltaE = custo_vizinho - custo
-
-            if deltaE < 0 or random.random() < math.exp(-delta / t):
-                solucao = vizinho
-                custo = custo_vizinho
-                if custo < melhor_custo:
-                    melhor_sol = solucao
-                    melhor_custo = custo
+                if deltaE < 0 or random.random() < math.exp(-deltaE / t):
+                    solucao = vizinho
+                    custo = custo_vizinho
+                    if custo < melhor_custo:
+                        melhor_sol = solucao
+                        melhor_custo = custo
 
         t *= alpha
 
     return melhor_sol, melhor_custo
 
+def best_simulated(eventos, runas, iter=10):
+    melhor_solucao = None
+    melhor_custo = float('inf')
+    for _ in range(iter):
+        solucao, custo = sim_annealing(eventos, runas)
+        if custo < melhor_custo:
+            melhor_custo = custo
+            melhor_solucao = solucao
+    return melhor_solucao, melhor_custo
 
-melhor_solucao, melhor_custo = sim_annealing(eventos, runas_powers)
+
+melhor_solucao, melhor_custo = best_simulated(eventos, runas_powers)
 print("Melhor solução encontrada:")
 for i, r in enumerate(melhor_solucao):
-    print(f"Cidade {i + 1}: {r}")
+    print(f"Cidade {i + 1}: {r} - "f"Poder total: {sum(runas_powers[ru] for ru in r)}")
 print("Custo total:", melhor_custo)

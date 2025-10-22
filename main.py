@@ -10,16 +10,34 @@ from mapHelper import (
     get_neighborhood,
     eventos,
 )
+from annealing import best_simulated
+
 
 pygame.init()
 
-runas = {
-    "1": {"poder": 1.6, "usos": 5},
-    "2": {"poder": 1.4, "usos": 5},
-    "3": {"poder": 1.3, "usos": 5},
-    "4": {"poder": 1.2, "usos": 5},
-    "5": {"poder": 1.0, "usos": 5},
+
+eventos = {
+    "1": 55,
+    "2": 60,
+    "3": 65,
+    "4": 70,
+    "5": 75,
+    "6": 90,
+    "7": 95,
+    "8": 120,
+    "9": 125,
+    "0": 130,
+    "B": 135,
+    "C": 150,
+    "E": 155,
+    "G": 160,
+    "H": 170,
+    "J": 180,
 }
+
+runas = {1: 1.6, 2: 1.4, 3: 1.3, 4: 1.2, 5: 1.0}
+
+num_uso_runas = [5] * len(runas)
 
 # Pygame window settings
 CELL_SIZE = 5  # Size of each cell in pixels
@@ -125,7 +143,6 @@ def busca_a_estrela(mapa, origem, destino):
             novo_dist_g = curr_dist_g + get_value_from_map(mapa, coord_vizinho)
             if coord_vizinho not in visitados or novo_dist_g < visitados[coord_vizinho]:
                 novo_h = manhattan_distance(coord_vizinho, destino)
-                # Create neighbor node with current node as parent
                 no_vizinho = TreeNode(coord_vizinho, novo_dist_g + novo_h, novo_dist_g)
                 no_vizinho.set_parent(curr_node)
                 fronteira.put(no_vizinho)
@@ -135,6 +152,26 @@ def busca_a_estrela(mapa, origem, destino):
 
 
 def best_path_through_all(mapa, eventos):
+    # tot_cost = 0
+    # paths = []
+    # nome_eventos = list(eventos.keys())
+    # M = [[0] * (len(nome_eventos) + 2) for _ in range(len(nome_eventos) + 2)]
+    # pontos = ['I'] +  nome_eventos + ['Z']
+    # for i in range(0, len(pontos)):
+    #     for j in range(i, len(pontos)):
+    #         cost, path = busca_a_estrela(
+    #             mapa,
+    #             get_coord_from_map(mapa, pontos[i]),
+    #             get_coord_from_map(mapa, pontos[j]),
+    #         )
+    #         M[i][j] = cost
+    #         if i != j:
+    #             M[j][i] = cost
+    #         else:
+    #             M[j][i] = None
+
+    # print(M)
+
     tot_cost = 0
     paths = []
     nome_eventos = list(eventos.keys())
@@ -156,14 +193,19 @@ mapa, start, end = read_file("mapa_t1_instancia.txt")
 WINDOW_WIDTH = len(mapa[0]) * CELL_SIZE
 WINDOW_HEIGHT = len(mapa) * CELL_SIZE
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("A* Pathfinder")
+pygame.display.set_caption("Mapa Elden Ring")
 
+print("Encontrando o melhor caminho entre os eventos")
 cost, paths = best_path_through_all(mapa, eventos)
-print(cost, paths)
-
-
-pygame.display.set_caption(f"Best path found - total cost: {cost}")
+print("Melhor custo sem as runas:", cost)
+print('------------------------------')
+print("Rodando o Simulated Annealing para encontrar o melhor uso de runas...")
+solucao, custo_runas = best_simulated(eventos, runas)
+print('-------------------------------')
+print("Melhor solucao de runas encontrada:", solucao, "com custo:", custo_runas)
+print('-------------------------------')
 draw_map(mapa, None, None, [path for path in paths])
+print(f"Solução encontrada com custo total: {cost + custo_runas} ")
 
 # Keep window open until user closes it
 running = True

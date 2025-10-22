@@ -38,7 +38,7 @@ def get_value(c):
     elif c == "X":
         v = -1
     elif c in eventos:
-        v = eventos[c]
+        v = 0
     return v
 
 
