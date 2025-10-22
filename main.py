@@ -10,6 +10,7 @@ from mapHelper import (
     get_neighborhood,
     eventos,
 )
+
 pygame.init()
 
 runas = {
@@ -61,12 +62,16 @@ def draw_map(mapa, current_node=None, visited=None, path=None):
         for i in range(w):
             char = mapa[j][i]
             if path and (i, j) in path:
-                color = COLORS['PATH']
+                color = COLORS["PATH"]
             elif current_node and (i, j) == current_node.get_coord():
-                color = COLORS['CURRENT']
+                color = COLORS["CURRENT"]
             else:
-                color = COLORS.get(char, COLORS['EVENT'] if char in eventos else (0, 0, 0))
-            pygame.draw.rect(screen, color, (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                color = COLORS.get(
+                    char, COLORS["EVENT"] if char in eventos else (0, 0, 0)
+                )
+            pygame.draw.rect(
+                screen, color, (i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            )
     pygame.display.flip()
 
 
@@ -146,8 +151,6 @@ def best_path_through_all(mapa, eventos):
     return tot_cost, paths
 
 
-
-
 # Read map first, then initialize pygame window
 mapa, start, end = read_file("mapa_t1_instancia.txt")
 WINDOW_WIDTH = len(mapa[0]) * CELL_SIZE
@@ -169,4 +172,3 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 pygame.quit()
-
