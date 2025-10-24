@@ -85,6 +85,7 @@ def sim_annealing(eventos, runas, Tini=100, Tmin=1e-3, alpha=0.97, iter=1000):
     t = Tini
 
     while t > Tmin:
+        print(f"Temperatura atual do simullated annealing: {t}")
         for _ in range(iter):
             vizinho = gera_vizinho(solucao, runas)
             if valida_solucao(vizinho):
@@ -106,15 +107,9 @@ def best_simulated(eventos, runas, iter=10):
     melhor_solucao = None
     melhor_custo = float('inf')
     for _ in range(iter):
+        print(f"Executando o {_} simulated annealing")
         solucao, custo = sim_annealing(eventos, runas)
         if custo < melhor_custo:
             melhor_custo = custo
             melhor_solucao = solucao
     return melhor_solucao, melhor_custo
-
-
-melhor_solucao, melhor_custo = best_simulated(eventos, runas_powers)
-print("Melhor solução encontrada:")
-for i, r in enumerate(melhor_solucao):
-    print(f"Cidade {i + 1}: {r} - "f"Poder total: {sum(runas_powers[ru] for ru in r)}")
-print("Custo total:", melhor_custo)

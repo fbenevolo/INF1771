@@ -29,7 +29,7 @@ def get_value(c):
         v = 50
     elif c == "A":
         v = 20
-    elif c == "N":
+    elif c == "N" or c == "L":
         v = 15
     elif c == "D":
         v = 8
