@@ -1,6 +1,6 @@
 # Trabalho de Inteligência Artificial
 
-Objetivo do Projeto
+## Objetivo do Projeto
 
 O projeto tem como objetivo aplicar técnicas de busca e otimização em IA para resolver um problema de navegação e decisão em um mapa com diferentes terrenos, eventos e recursos limitados (runas).
 O agente deve:
